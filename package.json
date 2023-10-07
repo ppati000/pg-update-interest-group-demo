@@ -1,0 +1,22 @@
+{
+  "name": "interest-group",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Postgres UPDATE statements 1. How `UPDATE` works 2. Updating rows concurrently     1. Locking (show in two terminals)     2. Performance with many processes 3. Updating many rows     1. How to avoid locks         1. `lock_timeout`         2. `SELECT FOR UPDATE`     2. Deadlocks 💀 4. DDL statements 💣",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^3.2.4",
+    "pg": "^8.11.3"
+  },
+  "devDependencies": {
+    "@types/async": "^3.2.21",
+    "@types/pg": "^8.10.3",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  }
+}
