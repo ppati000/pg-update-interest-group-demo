@@ -1,6 +1,6 @@
-# Interest Group: UPDATE statements in PostgreSQL
+# Interest Group: Exploring the Inner Workings of PostgreSQL UPDATE Operations
 
-Postgres UPDATE statements
+Ideas:
 1. How `UPDATE` works
 2. Updating rows concurrently
     1. Locking (show in two terminals)
@@ -8,11 +8,17 @@ Postgres UPDATE statements
 3. Updating many rows
     1. How to avoid locks
         1. `lock_timeout`
-        2. `SELECT FOR UPDATE`
+        2. `SELECT FOR UPDATE SKIP LOCKED`
     2. Deadlocks 💀
 4. DDL statements 💣
 
-## 1 How `UPDATE` works
+Three key questions:
+
+1. Is updating an existing row easier than inserting a new row?
+2. Does the Read Committed isolation level imply that we might lose concurrent row updates?
+3. Is updating many rows in one query better than updating one row at a time?
+
+# 1 How `UPDATE` works
 
 First, some preparation.
 
@@ -89,9 +95,7 @@ SELECT * FROM get_page_human('person', 0);
 Keeping old versions is necessary for transaction isolation.
 This way a `SELECT` does not need to acquire a lock.
 
-# 2 Updating rows concurrently
-
-## 2.1 Updating a single row concurrently
+# 2 Concurrent UPDATE operations
 
 Let's update the row in two terminals:
 
@@ -105,9 +109,33 @@ BEGIN;
 UPDATE person SET name = name || 'rick' WHERE id = 1;
 ```
 
-Even at the read committed isolation level, these queries are safe in Postgres.
-The second UPDATE will wait for the first transaction to finish, and then re-read the row.
-
-## 2.2 Performance with many processes
+## Excursion: Performance with many processes
 
 See `insert_rows.ts` and `update_single_row.ts`.
+
+# 3 Multi-row UPDATE queries
+
+## Deadlocks
+
+```sql
+TRUNCATE TABLE person;
+INSERT INTO person
+  SELECT generate_series, true, 'foo'
+  FROM generate_series(1, 1000);
+```
+
+```sql
+-- Terminal 1
+BEGIN;
+UPDATE person SET name = 'Patrick' WHERE id <= 500;
+
+-- Terminal 2
+BEGIN;
+UPDATE person SET name = 'Patrick' WHERE id > 500;
+
+-- Terminal 1
+UPDATE person SET name = 'Pat' WHERE id > 500;
+
+-- Terminal 2
+UPDATE person SET name = 'Pat' WHERE id <= 500;
+```
